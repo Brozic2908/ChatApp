@@ -21,6 +21,7 @@ from .dictionary import CaseInsensitiveDict
 from json import dumps
 import urllib.parse
 import base64
+
 class Request(): # parse and prepare
     """The fully mutable "class" `Request <Request>` object,
     containing the exact bytes that will be sent to the server.
@@ -67,6 +68,7 @@ class Request(): # parse and prepare
         self.routes = {}
         #: Hook point for routed mapped-path
         self.hook = None
+
     def extract_request_line(self, request):
         try:
             lines = request.splitlines()
@@ -75,7 +77,7 @@ class Request(): # parse and prepare
 
             if path == '/':
                 path = '/index.html'
-            if path == '/': 
+            if path == '/test': 
                 path = '/test.html'
         except Exception:
             return None, None, None
@@ -100,14 +102,23 @@ class Request(): # parse and prepare
         # Prepare the request line from the request header
         self.method, self.path, self.version = self.extract_request_line(request)
         print(f"[Request] {self.method} path {self.path} version {self.version}")
-
-        #
-        # @bksysnet Preapring the webapp hook with WeApRous instance
-        # The default behaviour with HTTP server is empty routed
-        #
-        # TODO manage the webapp hook in this mounting point
-        #
         
+        self.headers = self.prepare_headers(request)
+        
+        cookies = self.headers.get('cookie', '') # "session_id=abc123; auth=true"
+        cookies_mp = {}
+        if cookies:
+            for i in cookies.split('; '): 
+                key, value = i.split('=', 1)
+                cookies_mp[key.lower()] = value
+        self.cookies = cookies_mp # {'session_id': 'abc123', 'auth': 'true'}
+        
+        if self.method in ['POST', 'PUT']:
+            body_start = request.find('\r\n\r\n')
+            self.body = request[body_start + 4:] if body_start != -1 else ''
+        else:
+            self.body = ''
+
         if not routes == {}: #{('POST', '/login'): login_function, ('GET', '/hello'): hello_function}
             self.routes = routes
             self.hook = routes.get((self.method, self.path))
@@ -116,14 +127,6 @@ class Request(): # parse and prepare
         else: 
             print(f"[Request] No handler founded for {self.method} - {self.path}")
 
-        self.headers = self.prepare_headers(request)
-        cookies = self.headers.get('cookie', '') # "session_id=abc123; auth=true"
-        items = cookies.split('; ')
-        cookies_mp = {}
-        for i in items: 
-            key, value = i.split('=')
-            cookies_mp[key.lower()] = value
-        self.cookies = cookies_mp # {'session_id': 'abc123', 'auth': 'true'}
         return
 
     def prepare_body(self, data, files, json=None): # for POST/PUT, para are json>files>data
@@ -163,7 +166,6 @@ class Request(): # parse and prepare
         self.prepare_content_length(self.body)
         return
 
-
     def prepare_content_length(self, body):
         self.headers["Content-Length"] = "0"
         if (body is not None) and (body != ""): 
@@ -182,6 +184,12 @@ class Request(): # parse and prepare
             self.headers["Authorization"] = f"Basic {encoded}"
         elif isinstance(auth,str): 
             self.headers["Authorization"] = f"Bearer {encoded}" 
+
     def prepare_cookies(self, cookies):
-        if cookies is not None:  
-            self.headers["Cookie"] = cookies
+        """Set Cookie header from dictionary.
+        
+        :param cookies: Dictionary of cookies.
+        """
+        if cookies:
+            cookie_str = '; '.join([f"{key}={value}" for key, value in cookies.items()])
+            self.headers["Cookie"] = cookie_str

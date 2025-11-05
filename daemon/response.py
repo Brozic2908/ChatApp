@@ -136,84 +136,153 @@ class Response():
 
     def parse_post_body(self, body): 
         """
-        body = "username=admin&password=12345" => {'username': 'admin', 'password': '12345'}
-        body = "fullname=Nguyen+Van+A&email=test%40gmail.com" => {'fullname': 'Nguyen Van A', 'email': 'test@gmail.com'}
+        Parse URL-encoded POST body into dictionary.
+        
+        :param body: Raw POST body string
+        :return: Dictionary of parsed key-value pairs
+        
+        Example:
+            body = "username=admin&password=12345"
+            returns {'username': 'admin', 'password': '12345'}
         """
         data = {}
-        if not body or body == "": 
+        if not body or body == "":
             return data
-        for param in body.split('&'): 
+
+        for param in body.split('&'):
             if '=' in param: 
-                key, value  = param.split('=',1)
+                key, value = param.split('=',1)
                 key = urllib.parse.unquote_plus(key) # use for decode URL-encode string which derived from POST body HTML
                 value = urllib.parse.unquote_plus(value)
                 data[key] = value
+                
         print(f"[Response] Parsed POST data: {data}")
         return data
     
     def is_authenticated(self,request): # check if request has valid authentication cookie
+        """
+        Check if request has valid authentication cookie.
+        
+        :param request: Request object
+        :return: Boolean indicating authentication status
+        """
         if not hasattr(request,'cookies') or request.cookies is None: 
+            print("[Response] Authentication check: No cookies found")
             return False
         
-        auth_value = request.cookies.get(AUTH_COOKIE_NAME.lower(),'')
+        auth_value = request.cookies.get(AUTH_COOKIE_NAME.lower(), '')
         is_valid_cookies = auth_value == AUTH_COOKIE_VALUE
         print(f"[Response] Authentication check: auth={auth_value} - valid state={is_valid_cookies}")
         return is_valid_cookies
     
     def validate_credentials(self, username, password): 
+        """
+        Validate login credentials against stored values.
+        
+        :param username: Username string
+        :param password: Password string
+        :return: Boolean indicating if credentials are valid
+        """
         is_valid_credent = (username == VALID_USERNAME and password == VALID_PASSWORD)
+        print(f"[Response] Credential validation: username={username}, valid={is_valid_credent}")
         return is_valid_credent
     
-    def build_login_response(self,request): # if receving POST/login request with authen -> make response for that
+    def build_login_response(self,request): 
+        """
+        Build response for POST /login request with authentication.
+        
+        :param request: Request object containing login credentials
+        :return: Complete HTTP response bytes
+        """
         print(f"[Response] Please wait, logging in...")
         
+        # Parse credentials from POST body
         info = self.parse_post_body(request.body)
         username = info.get('username','')
         password = info.get('password','')
+
         if self.validate_credentials(username,password): 
+            # Successful login
             print(f"[Response] Login successfully - setting auth cookie")
             filepath = os.path.join(BASE_DIR+ "www/", "index.html")
-            with open(filepath,'rb') as f: 
-                content =f.read()
-            self.status_code = 200
-            self._content = content
-            self.headers['Content-Type'] = 'text/html'
-            self.headers['Content-Length'] = str(len(self._content))
-            self.headers['Set-Cookie'] = f"{AUTH_COOKIE_NAME}={AUTH_COOKIE_VALUE}; Path=/; HttpOnly"
-            self.headers['Cache-Control'] = 'no-cache'
-        else: # login fail
+            
+            try:
+                with open(filepath,'rb') as f: 
+                    content =f.read()
+
+                self.status_code = 200
+                self._content = content
+                self.headers['Content-Type'] = 'text/html'
+                self.headers['Content-Length'] = str(len(self._content))
+                self.headers['Set-Cookie'] = f"{AUTH_COOKIE_NAME}={AUTH_COOKIE_VALUE}; Path=/; HttpOnly"
+                self.headers['Cache-Control'] = 'no-cache'
+
+            except FileNotFoundError:
+                print("[Response] Error: index.html not found")
+                self.status_code = 500
+                self._content = b"Internal Server Error"
+                self.headers['Content-Type'] = 'text/plain'
+                self.headers['Content-Length'] = str(len(self._content))
+        else:
+            # login fail
             print(f"[Response] Login failed: Invalid credentials")
             self.status_code = 401
             filepath = os.path.join(BASE_DIR+ "www/errors/" , "401.html")
-            with open(filepath,'rb') as f: 
-                content =f.read()
-            self._content = content
+
+            try:
+                with open(filepath,'rb') as f: 
+                    content =f.read()
+                self._content = content
+            except FileNotFoundError:
+                self._content = b"401 Unauthorized"
+
             self.headers['Content-Type'] = 'text/html'
             self.headers['Content-Length'] = str(len(self._content))
             self.headers['Cache-Control'] = 'no-cache'
-        self.reason = HTTP_REASON.get(self.status_code,"Unknown")
+
+        self.reason = HTTP_REASON.get(self.status_code, "Unknown")
         self._header = self.build_response_header(request)
         return self._header + self._content
-    
+
     def build_unauthorized_response(self): 
+        """
+        Build 401 Unauthorized response.
+        
+        :return: Complete HTTP response bytes
+        """
+        print("[Response] Building 401 Unauthorized response")
         self.status_code = 401 
         filepath = os.path.join(BASE_DIR+ "www/errors/" , "401.html")
-        with open(filepath,'rb') as f: 
-            content =f.read()
-        self._content = content  
+
+        try:
+            with open(filepath,'rb') as f: 
+                content =f.read()
+            self._content = content
+        except FileNotFoundError:
+            # Fallback content if 401.html doesn't exist
+            self._content = b"""<!DOCTYPE html>
+<html>
+<head><title>401 Unauthorized</title></head>
+<body>
+<h1>401 Unauthorized</h1>
+<p>Please login to access this page.</p>
+<a href="/login">Go to login</a>
+</body>
+</html>"""
+
         self.headers['Content-Type'] = 'text/html'
         self.headers['Content-Length'] = str(len(self._content))
         self.headers['Cache-Control'] = 'no-cache'
-        self.reason = HTTP_REASON.get(self.status_code,"Unauthorized")
+        self.reason = HTTP_REASON.get(self.status_code, "Unauthorized")
+
+        # Build header
         status_line = f"HTTP/1.1 {self.status_code} {self.reason}"
         fmt_header = status_line + "\r\n"
-        for key, value in  self.headers.items():
+        for key, value in self.headers.items():
             fmt_header += f"{key}: {value}\r\n"
         fmt_header += "\r\n"
+
         return str(fmt_header).encode('utf-8') + self._content
-
-
-    
 
     def get_mime_type(self, path):
         """
@@ -229,7 +298,6 @@ class Response():
         except Exception:
             return 'application/octet-stream'
         return mime_type or 'application/octet-stream'
-
 
     def prepare_content_type(self, mime_type='text/html'):
         """
@@ -394,20 +462,27 @@ class Response():
 
         :rtype bytes: complete HTTP response using prepared headers and content.
         """
-
         path = request.path
-        method = request.method
-        mime_type = self.get_mime_type(path)
-        print(f"[Response] {request.method} path {request.path} mime_type {mime_type}")
+        method = request.method        
+        print(f"[Response] {request.method} path {request.path}")
+        
+        # Handle POST /login
         if method == 'POST' and path == '/login': 
             print("[Response] Handling login POST request")
             return self.build_login_response(request)
-        if method == 'GET' and path in ['/','/index.html']: 
+
+        # Handle GET / or /index.html - require authentication
+        if method == 'GET' and path in ['/', '/index.html']: 
             if not self.is_authenticated(request): 
                 print("[Response] Access denied: No valid authentication cookie")
                 return self.build_unauthorized_response()
             else: 
-                print("[Response] Access permitted: Valid authentication cookie")
+                print("[Response] Access permitted: Valid authentication cookie found")
+                        
+        # Continue with normal file serving
+        mime_type = self.get_mime_type(path)
+        print(f"[Response] MIME type: {mime_type}")
+                
         base_dir = ""
 
         #If HTML, parse and serve embedded objects
@@ -415,15 +490,17 @@ class Response():
             base_dir = self.prepare_content_type(mime_type = 'text/html')
         elif mime_type == 'text/css':
             base_dir = self.prepare_content_type(mime_type = 'text/css')
-        #
-        # TODO: add support objects
-        #
+        elif mime_type and mime_type.startswith('image/'):
+            base_dir = self.prepare_content_type(mime_type=mime_type)
         else:
+            print(f"[Response] Unsupported MIME type: {mime_type}")
             return self.build_notfound()
 
+        # Load content
         _, self._content = self.build_content(path, base_dir)
         self._header = self.build_response_header(request)
         self.reason = HTTP_REASON.get(self.status_code, "Unknown")
+
         return self._header + self._content
 """
 request.path = "/index.html"
