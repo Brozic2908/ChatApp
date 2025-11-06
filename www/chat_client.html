@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Chat Application</title>
+    <link rel="stylesheet" href="/CO3094-weaprous/static/css/chat_client.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Hybrid Chat Application - Testing Interface</h1>
+
+      <!-- Registration Section -->
+      <div class="section">
+        <h2>1. Peer Registration (Client-Server)</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="peerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>IP Address:</label>
+          <input
+            type="text"
+            id="peerIp"
+            placeholder="192.168.1.100"
+            value="127.0.0.1"
+          />
+        </div>
+        <div class="input-group">
+          <label>Port:</label>
+          <input type="text" id="peerPort" placeholder="5000" value="5000" />
+        </div>
+        <button onclick="registerPeer()">Register Peer</button>
+        <button onclick="getPeerList()">Get Peer List</button>
+        <div id="registerResponse" class="response" style="display: none"></div>
+        <div id="peerList"></div>
+      </div>
+
+      <!-- Channel Management -->
+      <div class="section">
+        <h2>2. Channel Management</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="channelPeerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>Channel Name:</label>
+          <input
+            type="text"
+            id="channelName"
+            placeholder="general"
+            value="general"
+          />
+        </div>
+        <button onclick="joinChannel()">Join Channel</button>
+        <div id="channelResponse" class="response" style="display: none"></div>
+      </div>
+
+      <!-- P2P Connection -->
+      <div class="section">
+        <h2>3. P2P Connection Setup</h2>
+        <div class="input-group">
+          <label>From Peer:</label>
+          <input
+            type="text"
+            id="fromPeer"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>To Peer:</label>
+          <input
+            type="text"
+            id="toPeer"
+            placeholder="peer456"
+            value="peer002"
+          />
+        </div>
+        <button onclick="connectPeer()">Connect to Peer</button>
+        <div id="connectResponse" class="response" style="display: none"></div>
+      </div>
+
+      <!-- Broadcast Message -->
+      <div class="section">
+        <h2>4. Broadcast Message (P2P)</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="broadcastPeerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>Channel:</label>
+          <input
+            type="text"
+            id="broadcastChannel"
+            placeholder="general"
+            value="general"
+          />
+        </div>
+        <div class="input-group">
+          <label>Message:</label>
+          <textarea
+            id="broadcastMessage"
+            rows="3"
+            placeholder="Enter your message"
+          >
+Hello everyone!</textarea
+          >
+        </div>
+        <button onclick="broadcastMessage()">Broadcast Message</button>
+        <button onclick="getMessages()">Get Messages</button>
+        <div
+          id="broadcastResponse"
+          class="response"
+          style="display: none"
+        ></div>
+        <div id="messageList"></div>
+      </div>
+
+      <!-- Direct Message -->
+      <div class="section">
+        <h2>5. Direct Message (P2P)</h2>
+        <div class="input-group">
+          <label>From Peer:</label>
+          <input
+            type="text"
+            id="dmFromPeer"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>To Peer:</label>
+          <input
+            type="text"
+            id="dmToPeer"
+            placeholder="peer456"
+            value="peer002"
+          />
+        </div>
+        <div class="input-group">
+          <label>Message:</label>
+          <textarea id="dmMessage" rows="3" placeholder="Enter your message">
+Hi there!</textarea
+          >
+        </div>
+        <button onclick="sendDirectMessage()">Send Direct Message</button>
+        <div id="dmResponse" class="response" style="display: none"></div>
+      </div>
+    </div>
+    <script href="/CO3094-weaprous/static/js/chat_client.js"></script>
+  </body>
+</html>

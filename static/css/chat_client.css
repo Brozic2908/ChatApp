@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  padding: 20px;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+.section {
+  margin-bottom: 30px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+.section h2 {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+.input-group {
+  margin-bottom: 10px;
+}
+label {
+  display: inline-block;
+  width: 120px;
+  font-weight: bold;
+}
+input,
+textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 300px;
+}
+button {
+  background: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+button:hover {
+  background: #45a049;
+}
+.response {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-left: 3px solid #4caf50;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+.error {
+  border-left-color: #f44336;
+}
+#peerList,
+#messageList {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  padding: 10px;
+  margin-top: 10px;
+}
+.peer-item,
+.message-item {
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+}
+.status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-left: 10px;
+}
+.status.connected {
+  background: #4caf50;
+  color: white;
+}
+.status.disconnected {
+  background: #f44336;
+  color: white;
+}
