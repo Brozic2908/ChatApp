@@ -49,8 +49,8 @@ def chat_login(headers="guest", body="anonymous"):
     }
 
 
-@app.route('/submit-info', methos=["POST"])
-def submit_peer_info(heades="", body=""):
+@app.route('/submit-info', methods=["POST"])
+def submit_peer_info(headers="", body=""):
     """
     Register a new peer with the centralized server.
     
@@ -305,7 +305,7 @@ def send_direct_message(headers="", body=""):
         return {"status": "error", "message": str(e)}
 
 
-@app.route('/get-messages', methods=['GET'])
+@app.route('/get-messages', methods=['GET', 'POST'])
 def get_channel_messages(headers="", body=""):
     """
     Retrieve messages from a channel.

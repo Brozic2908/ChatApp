@@ -102,14 +102,67 @@ class HttpAdapter:
         # Response handler
         resp = self.response
 
-        # Handle the request
-        msg = conn.recv(1024).decode()
-        req.prepare(msg, routes)
+        # Handle the request - read full request
+        msg = b""
+        # Read in chunks until we get the complete request
+        # First, read headers (end with \r\n\r\n)
+        headers_received = False
+        while not headers_received:
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            msg += chunk
+            if b"\r\n\r\n" in msg:
+                headers_received = True
+                # Check if there's a Content-Length header
+                try:
+                    # Decode only headers part to check Content-Length
+                    header_end = msg.find(b"\r\n\r\n")
+                    header_bytes = msg[:header_end]
+                    header_str = header_bytes.decode('utf-8', errors='ignore')
+                    lines = header_str.split('\r\n')
+                    content_length = 0
+                    for line in lines:
+                        if line.lower().startswith('content-length:'):
+                            content_length = int(line.split(':', 1)[1].strip())
+                            break
+                    
+                    # If there's a body, read it
+                    if content_length > 0:
+                        body_start = header_end + 4
+                        body_received = len(msg) - body_start
+                        while body_received < content_length:
+                            chunk = conn.recv(min(4096, content_length - body_received))
+                            if not chunk:
+                                break
+                            msg += chunk
+                            body_received = len(msg) - body_start
+                except Exception as e:
+                    print(f"[HttpAdapter] Error reading request body: {e}")
+                break
+            # Safety check to avoid infinite loop
+            if len(msg) > 100000:  # 100KB limit
+                break
+        
+        try:
+            msg_str = msg.decode('utf-8')
+        except UnicodeDecodeError:
+            msg_str = msg.decode('latin-1', errors='ignore')  # Fallback encoding
+        
+        req.prepare(msg_str, routes)
 
-        # Handle request hook
+        # Handle request hook (route handler)
+        route_result = None
         if req.hook:
             print("[HttpAdapter] hook in route-path METHOD {} PATH {}".format(req.hook._route_path,req.hook._route_methods))
-            req.hook(headers = "bksysnet",body = "get in touch")
+            # Call route handler with actual headers and body
+            try:
+                route_result = req.hook(headers=req.headers, body=req.body)
+                # Store the result in request object for response builder
+                req.route_result = route_result
+            except Exception as e:
+                print(f"[HttpAdapter] Error in route handler: {e}")
+                req.route_result = {"status": "error", "message": str(e)}
             #
             # TODO: handle for App hook here
             #

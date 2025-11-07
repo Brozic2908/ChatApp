@@ -26,6 +26,7 @@ import os
 import mimetypes
 from .dictionary import CaseInsensitiveDict
 import urllib.parse
+import json
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/../"
 HTTP_REASON = {
     200: "OK",
@@ -331,6 +332,12 @@ class Response():
         elif main_type == 'application':
             base_dir = BASE_DIR+"apps/"
             self.headers['Content-Type']=f"application/{sub_type}"
+        elif main_type == 'application':
+            if sub_type in ['javascript', 'json', 'pdf', 'zip']:
+                base_dir = BASE_DIR + "static/"
+            else:
+                base_dir = BASE_DIR + "apps/"
+            self.headers['Content-Type']=f"application/{sub_type}"
         #
         #  TODO: process other mime_type
         #        application/xml       
@@ -453,6 +460,43 @@ class Response():
                 "404 Not Found" #body
             ).encode('utf-8')
 
+    def build_json_response(self, data, request):
+        """
+        Builds an HTTP response with JSON content from route handler result.
+        
+        :param data: Dictionary or data to be serialized as JSON
+        :param request: Request object
+        :rtype bytes: Complete HTTP response with JSON body
+        """
+        print(f"[Response] Building JSON response from route handler")
+        
+        # Set status code (default to 200)
+        self.status_code = 200
+        
+        # Convert data to JSON string
+        try:
+            json_str = json.dumps(data, ensure_ascii=False)
+            json_bytes = json_str.encode('utf-8')
+        except (TypeError, ValueError) as e:
+            print(f"[Response] Error serializing JSON: {e}")
+            self.status_code = 500
+            json_bytes = b'{"status": "error", "message": "Internal server error"}'
+        
+        # Set content
+        self._content = json_bytes
+        
+        # Set headers
+        self.headers['Content-Type'] = 'application/json; charset=utf-8'
+        self.headers['Content-Length'] = str(len(json_bytes))
+        self.headers['Cache-Control'] = 'no-cache'
+        
+        # Build response header
+        self.reason = HTTP_REASON.get(self.status_code, "OK")
+        self._header = self.build_response_header(request)
+        
+        # Return complete response
+        return self._header + self._content
+
 
     def build_response(self, request):
         """
@@ -463,8 +507,14 @@ class Response():
         :rtype bytes: complete HTTP response using prepared headers and content.
         """
         path = request.path
-        method = request.method        
+        method = request.method
+        mime_type = 'application/octet-stream'
         print(f"[Response] {request.method} path {request.path}")
+        
+        # Check if there's a route handler result (JSON API response)
+        if hasattr(request, 'route_result') and request.route_result is not None:
+            print(f"[Response] Route handler returned result: {request.route_result}")
+            return self.build_json_response(request.route_result, request)
         
         # Handle POST /login
         if method == 'POST' and path == '/login': 
