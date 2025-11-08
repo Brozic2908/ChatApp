@@ -17,22 +17,28 @@ It combines client-server and P2P paradigms for distributed chat functionality.
 """
 
 import json
-import socket
 import argparse
 import threading
 from datetime import datetime
 
+from db.database_manager import DatabaseManager
 from daemon.weaprous import WeApRous
 
 PORT = 8001 # Default port for chat app
 
 app = WeApRous()
 
-# In-memory storage for peers and channels
-peers_registry = {} # {peer_id: {"ip": ip, "port": port, "last_seen": timestamp}}
-channels = {} # {channel_name: {"members": [peer_ids], "messages": []}}
-peer_connections = {} # {peer_id: {"channels": [channel_names]}}
-direct_messages = {} # {(peer1, peer2): [messages]} - luôn sắp xếp peer_id để consistency
+# --- Database integration ---
+db = DatabaseManager(base_dir="db")
+loaded_data = db.load_all()
+
+peers_registry = loaded_data.get("peers", {})
+channels = loaded_data.get("channels", {})
+peer_connections = loaded_data.get("connections", {})
+direct_messages = loaded_data.get("direct_messages", {})
+
+print(f"[DB] Loaded {len(peers_registry)} peers, {len(channels)} channels, "
+      f"{len(direct_messages)} direct message threads.")
 
 @app.route('/login', methods=['POST'])
 def chat_login(headers="guest", body="anonymous"):
@@ -76,9 +82,11 @@ def submit_peer_info(headers="", body=""):
             "last_seen": datetime.now().isoformat()
         }
         
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
+        
         print(f"[ChatApp] Peer registered: {peer_id} at {peer_ip}:{peer_port}")
         print(f"[ChatApp] Total peers: {len(peers_registry)}")
-        
+
         return {
             "status": "success",
             "message": "Peer registered",
@@ -112,6 +120,8 @@ def get_peer_list(headers="", body=""):
             "port": info["port"],
             "last_seen": info["last_seen"],
         })
+        
+    db.save_all(peers_registry, channels, peer_connections, direct_messages)
     
     return {
         "status": "success",
@@ -154,6 +164,7 @@ def add_to_channel(headers="", body=""):
         if channel_name not in peer_connections[peer_id]["channels"]:
             peer_connections[peer_id]["channels"].append(channel_name)
         
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         print(f"[ChatApp] Peer {peer_id} added to channel {channel_name}")
         
         return {
@@ -194,8 +205,10 @@ def connect_to_peer(headers="", body=""):
         
         target_info = peers_registry[to_peer]
         
-        print(f"[ChatApp] P2P connection: {from_peer} -> {to_peer}")
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         
+        print(f"[ChatApp] P2P connection: {from_peer} -> {to_peer}")
+
         return {
             "status": "success",
             "message": "Peer info retrieved",
@@ -205,6 +218,7 @@ def connect_to_peer(headers="", body=""):
                 "port": target_info["port"]
             }
         }
+
     except json.JSONDecodeError:
         return {"status": "error", "message": "Invalid JSON"}
     except Exception as e:
@@ -248,6 +262,7 @@ def broadcast_message(headers="", body=""):
         print(f"[ChatApp] Broadcast in {channel_name} from {peer_id}: {message}")
         print(f"[ChatApp] Broadcasting to {len(target_peers)} peers")
 
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         return {
             "status": "success",
             "message": "Message broadcasted",
@@ -304,6 +319,7 @@ def send_direct_message(headers="", body=""):
         print(f"[ChatApp] Direct message {from_peer} -> {to_peer}: {message}")
         print(f"[ChatApp] Stored in DM key: {dm_key}, total messages: {len(direct_messages[dm_key])}")
 
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         return {
             "status": "success",
             "message": "Message sent",
@@ -356,6 +372,7 @@ def get_direct_messages(headers="", body=""):
         
         print(f"[ChatApp] Direct messages retrieved between {peer1} and {peer2}: {len(messages)}")
         
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         return {
             "status": "success",
             "peer1": peer1,
@@ -395,6 +412,7 @@ def get_channel_messages(headers="", body=""):
         
         print(f"[ChatApp] Messages retrieved from {channel_name}: {len(messages)}")
         
+        db.save_all(peers_registry, channels, peer_connections, direct_messages)
         return {
             "status": "success",
             "channel": channel_name,

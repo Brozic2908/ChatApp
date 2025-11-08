@@ -209,5 +209,4 @@ __marimo__/
 # Ignore raw and processed data
 data/raw/
 data/processed/
-*.json
 *.csv
