@@ -936,6 +936,11 @@
             }),
           });
 
+          // Check if response is ok before parsing
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
           const result = await response.json();
 
           if (result.status === "success") {
@@ -960,9 +965,24 @@
             document.getElementById("channelMembers").textContent = `${
               result.count
             } message${result.count !== 1 ? "s" : ""}`;
+          } else {
+            console.error("Error loading direct messages:", result.message);
+            showNotification(
+              "Error",
+              `Failed to load messages: ${result.message}`,
+              "error"
+            );
           }
         } catch (error) {
           console.error("Error loading direct messages:", error);
+          // Only show error notification if it's not a network error (which might be temporary)
+          if (!error.message.includes("fetch")) {
+            showNotification(
+              "Error",
+              "Failed to load direct messages",
+              "error"
+            );
+          }
         }
       }
 
@@ -1164,6 +1184,12 @@
             }),
           });
 
+          // Check if response is ok before parsing
+          if (!response.ok) {
+            console.warn(`Failed to check new DMs: HTTP ${response.status}`);
+            return;
+          }
+
           const result = await response.json();
 
           if (result.status === "success") {
@@ -1184,25 +1210,34 @@
             }
 
             lastDMCount[currentPeer] = newCount;
+          } else {
+            console.warn(`Error response for new DMs: ${result.message}`);
           }
         } catch (error) {
+          // Silently handle network errors for active chat
+          if (error.name === "TypeError" && error.message.includes("fetch")) {
+            return;
+          }
           console.error("Error checking direct messages:", error);
         }
       }
 
       // Thêm polling để check unread direct messages từ các peer khác
       setInterval(() => {
-        if (!currentUser) return;
+        if (!currentUser || activePeers.length === 0) return;
 
+        // Only check unread DMs for peers we're NOT currently chatting with
         activePeers.forEach((peer) => {
-          if (peer.peer_id !== currentPeer || chatMode !== "direct") {
+          const isCurrentPeer =
+            chatMode === "direct" && peer.peer_id === currentPeer;
+          if (!isCurrentPeer) {
             checkUnreadDirectMessages(peer.peer_id);
           }
         });
       }, 5000);
 
       async function checkUnreadDirectMessages(peerId) {
-        if (!currentUser) return;
+        if (!currentUser || !peerId) return;
 
         try {
           const response = await fetch(`${BASE_URL}/get-direct-messages`, {
@@ -1213,6 +1248,14 @@
               peer2: peerId,
             }),
           });
+
+          // Check if response is ok before parsing
+          if (!response.ok) {
+            console.warn(
+              `Failed to check unread DMs for ${peerId}: HTTP ${response.status}`
+            );
+            return;
+          }
 
           const result = await response.json();
 
@@ -1227,8 +1270,18 @@
             }
 
             lastDMCount[peerId] = newCount;
+          } else {
+            console.warn(
+              `Error response for unread DMs with ${peerId}: ${result.message}`
+            );
           }
         } catch (error) {
+          // Only log network errors, don't spam console
+          if (error.name === "TypeError" && error.message.includes("fetch")) {
+            // Silently ignore network errors - server might be temporarily unavailable
+            // or peer might have disconnected
+            return;
+          }
           console.error("Error checking unread DMs:", error);
         }
       }

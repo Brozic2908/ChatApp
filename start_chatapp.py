@@ -301,7 +301,7 @@ def send_direct_message(headers="", body=""):
         
         target_info = peers_registry[to_peer]
         # Tạo key cho direct messages (sắp xếp để đảm bảo consistency)
-        dm_key = tuple(sorted([from_peer, to_peer]))
+        dm_key = "_".join(sorted([from_peer, to_peer]))
         
         # Khởi tạo nếu chưa tồn tại
         if dm_key not in direct_messages:
@@ -356,21 +356,29 @@ def get_direct_messages(headers="", body=""):
         if not peer1 or not peer2:
             return {"status": "error", "message": "Both peer IDs required"}
         
-        # Tạo key (sắp xếp để đảm bảo consistency)
-        dm_key = tuple(sorted([peer1, peer2]))
+        # Tạo key (sắp xếp để đảm bảo consistency) - must match the format used in send_direct_message
+        dm_key = "_".join(sorted([peer1, peer2]))
         
-        if dm_key not in direct_messages:
-            return {
-                "status": "success",
-                "peer1": peer1,
-                "peer2": peer2,
-                "messages": [],
-                "count": 0
-            }
+        # Handle both string keys (correct format) and tuple keys (legacy/incorrect format)
+        # JSON doesn't support tuple keys, but check both formats for robustness
+        messages = []
+        if dm_key in direct_messages:
+            messages = direct_messages[dm_key]
+        else:
+            # Try to find messages with any key format (for migration purposes)
+            # This handles edge cases where keys might be stored differently
+            for key, msgs in direct_messages.items():
+                # Check if this key represents the same peer pair
+                key_peers = key.split("_") if isinstance(key, str) else list(key)
+                if sorted(key_peers) == sorted([peer1, peer2]):
+                    messages = msgs
+                    # Migrate to correct key format
+                    direct_messages[dm_key] = messages
+                    if key != dm_key:
+                        del direct_messages[key]
+                    break
         
-        messages = direct_messages[dm_key]
-        
-        print(f"[ChatApp] Direct messages retrieved between {peer1} and {peer2}: {len(messages)}")
+        print(f"[ChatApp] Direct messages retrieved between {peer1} and {peer2}: {len(messages)} messages")
         
         db.save_all(peers_registry, channels, peer_connections, direct_messages)
         return {
@@ -381,8 +389,12 @@ def get_direct_messages(headers="", body=""):
             "count": len(messages)
         }
         
+    except json.JSONDecodeError:
+        return {"status": "error", "message": "Invalid JSON"}
     except Exception as e:
         print(f"[ChatApp] Error in get-direct-messages: {e}")
+        import traceback
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}
 
 @app.route('/get-messages', methods=['GET', 'POST'])
