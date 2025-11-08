@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Chat Application</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      .section {
+        margin-bottom: 30px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .section h2 {
+        color: #555;
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+      .input-group {
+        margin-bottom: 10px;
+      }
+      label {
+        display: inline-block;
+        width: 120px;
+        font-weight: bold;
+      }
+      input,
+      textarea {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 300px;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .response {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f9f9f9;
+        border-left: 3px solid #4caf50;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+      .error {
+        border-left-color: #f44336;
+      }
+      #peerList,
+      #messageList {
+        max-height: 200px;
+        overflow-y: auto;
+        background: #f9f9f9;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      .peer-item,
+      .message-item {
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+      }
+      .status {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        margin-left: 10px;
+      }
+      .status.connected {
+        background: #4caf50;
+        color: white;
+      }
+      .status.disconnected {
+        background: #f44336;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Hybrid Chat Application - Testing Interface</h1>
+
+      <!-- Registration Section -->
+      <div class="section">
+        <h2>1. Peer Registration (Client-Server)</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="peerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>IP Address:</label>
+          <input
+            type="text"
+            id="peerIp"
+            placeholder="192.168.1.100"
+            value="127.0.0.1"
+          />
+        </div>
+        <div class="input-group">
+          <label>Port:</label>
+          <input type="text" id="peerPort" placeholder="5000" value="5000" />
+        </div>
+        <button onclick="registerPeer()">Register Peer</button>
+        <button onclick="getPeerList()">Get Peer List</button>
+        <div id="registerResponse" class="response" style="display: none"></div>
+        <div id="peerList"></div>
+      </div>
+
+      <!-- Channel Management -->
+      <div class="section">
+        <h2>2. Channel Management</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="channelPeerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>Channel Name:</label>
+          <input
+            type="text"
+            id="channelName"
+            placeholder="general"
+            value="general"
+          />
+        </div>
+        <button onclick="joinChannel()">Join Channel</button>
+        <div id="channelResponse" class="response" style="display: none"></div>
+      </div>
+
+      <!-- P2P Connection -->
+      <div class="section">
+        <h2>3. P2P Connection Setup</h2>
+        <div class="input-group">
+          <label>From Peer:</label>
+          <input
+            type="text"
+            id="fromPeer"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>To Peer:</label>
+          <input
+            type="text"
+            id="toPeer"
+            placeholder="peer456"
+            value="peer002"
+          />
+        </div>
+        <button onclick="connectPeer()">Connect to Peer</button>
+        <div id="connectResponse" class="response" style="display: none"></div>
+      </div>
+
+      <!-- Broadcast Message -->
+      <div class="section">
+        <h2>4. Broadcast Message (P2P)</h2>
+        <div class="input-group">
+          <label>Peer ID:</label>
+          <input
+            type="text"
+            id="broadcastPeerId"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>Channel:</label>
+          <input
+            type="text"
+            id="broadcastChannel"
+            placeholder="general"
+            value="general"
+          />
+        </div>
+        <div class="input-group">
+          <label>Message:</label>
+          <textarea
+            id="broadcastMessage"
+            rows="3"
+            placeholder="Enter your message"
+          >
+Hello everyone!</textarea
+          >
+        </div>
+        <button onclick="broadcastMessage()">Broadcast Message</button>
+        <button onclick="getMessages()">Get Messages</button>
+        <div
+          id="broadcastResponse"
+          class="response"
+          style="display: none"
+        ></div>
+        <div id="messageList"></div>
+      </div>
+
+      <!-- Direct Message -->
+      <div class="section">
+        <h2>5. Direct Message (P2P)</h2>
+        <div class="input-group">
+          <label>From Peer:</label>
+          <input
+            type="text"
+            id="dmFromPeer"
+            placeholder="peer123"
+            value="peer001"
+          />
+        </div>
+        <div class="input-group">
+          <label>To Peer:</label>
+          <input
+            type="text"
+            id="dmToPeer"
+            placeholder="peer456"
+            value="peer002"
+          />
+        </div>
+        <div class="input-group">
+          <label>Message:</label>
+          <textarea id="dmMessage" rows="3" placeholder="Enter your message">
+Hi there!</textarea
+          >
+        </div>
+        <button onclick="sendDirectMessage()">Send Direct Message</button>
+        <div id="dmResponse" class="response" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      const BASE_URL = "http://localhost:8001";
+
+      async function makeRequest(endpoint, method = "GET", data = null) {
+        try {
+          const options = {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          };
+
+          if (data && method !== "GET") {
+            options.body = JSON.stringify(data);
+          }
+
+          const response = await fetch(`${BASE_URL}${endpoint}`, options);
+          const text = await response.text();
+
+          try {
+            return JSON.parse(text);
+          } catch {
+            return { raw: text };
+          }
+        } catch (error) {
+          return { error: error.message };
+        }
+      }
+
+      function displayResponse(elementId, data, isError = false) {
+        const element = document.getElementById(elementId);
+        element.style.display = "block";
+        element.className = "response" + (isError ? " error" : "");
+        element.textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function registerPeer() {
+        const data = {
+          peer_id: document.getElementById("peerId").value,
+          ip: document.getElementById("peerIp").value,
+          port: parseInt(document.getElementById("peerPort").value),
+        };
+
+        const result = await makeRequest("/submit-info", "POST", data);
+        displayResponse("registerResponse", result, result.error);
+      }
+
+      async function getPeerList() {
+        const result = await makeRequest("/get-list", "GET");
+        displayResponse("registerResponse", result, result.error);
+
+        if (result.peers) {
+          const peerListDiv = document.getElementById("peerList");
+          peerListDiv.innerHTML = "<h3>Active Peers:</h3>";
+          result.peers.forEach((peer) => {
+            peerListDiv.innerHTML += `
+                        <div class="peer-item">
+                            <strong>${peer.peer_id}</strong> - ${peer.ip}:${peer.port}
+                            <span class="status connected">Online</span>
+                        </div>
+                    `;
+          });
+        }
+      }
+
+      async function joinChannel() {
+        const data = {
+          peer_id: document.getElementById("channelPeerId").value,
+          channel: document.getElementById("channelName").value,
+        };
+
+        const result = await makeRequest("/add-list", "POST", data);
+        displayResponse("channelResponse", result, result.error);
+      }
+
+      async function connectPeer() {
+        const data = {
+          from_peer: document.getElementById("fromPeer").value,
+          to_peer: document.getElementById("toPeer").value,
+        };
+
+        const result = await makeRequest("/connect-peer", "POST", data);
+        displayResponse("connectResponse", result, result.error);
+      }
+
+      async function broadcastMessage() {
+        const data = {
+          peer_id: document.getElementById("broadcastPeerId").value,
+          channel: document.getElementById("broadcastChannel").value,
+          message: document.getElementById("broadcastMessage").value,
+        };
+
+        const result = await makeRequest("/broadcast-peer", "POST", data);
+        displayResponse("broadcastResponse", result, result.error);
+      }
+
+      async function getMessages() {
+        const data = {
+          channel: document.getElementById("broadcastChannel").value,
+        };
+
+        const result = await makeRequest("/get-messages", "GET", data);
+        displayResponse("broadcastResponse", result, result.error);
+
+        if (result.messages) {
+          const messageListDiv = document.getElementById("messageList");
+          messageListDiv.innerHTML = "<h3>Messages:</h3>";
+          result.messages.forEach((msg) => {
+            messageListDiv.innerHTML += `
+                        <div class="message-item">
+                            <strong>${msg.from}</strong>: ${msg.message}
+                            <br><small>${msg.timestamp}</small>
+                        </div>
+                    `;
+          });
+        }
+      }
+
+      async function sendDirectMessage() {
+        const data = {
+          from_peer: document.getElementById("dmFromPeer").value,
+          to_peer: document.getElementById("dmToPeer").value,
+          message: document.getElementById("dmMessage").value,
+        };
+
+        const result = await makeRequest("/send-peer", "POST", data);
+        displayResponse("dmResponse", result, result.error);
+      }
+
+      // Auto-refresh peer list every 5 seconds
+      setInterval(() => {
+        if (document.getElementById("peerList").innerHTML !== "") {
+          getPeerList();
+        }
+      }, 5000);
+    </script>
+  </body>
+</html>

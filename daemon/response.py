@@ -245,10 +245,11 @@ class Response():
         self._header = self.build_response_header(request)
         return self._header + self._content
 
-    def build_unauthorized_response(self): 
+    def build_unauthorized_response(self, request=None): 
         """
         Build 401 Unauthorized response.
         
+        :param request: Request object (optional, for CORS headers)
         :return: Complete HTTP response bytes
         """
         print("[Response] Building 401 Unauthorized response")
@@ -276,11 +277,20 @@ class Response():
         self.headers['Cache-Control'] = 'no-cache'
         self.reason = HTTP_REASON.get(self.status_code, "Unauthorized")
 
-        # Build header
+        # Build header with CORS support
+        origin = "*"
+        if request and hasattr(request, 'headers'):
+            origin = request.headers.get("origin", "*")
+        
         status_line = f"HTTP/1.1 {self.status_code} {self.reason}"
         fmt_header = status_line + "\r\n"
         for key, value in self.headers.items():
             fmt_header += f"{key}: {value}\r\n"
+        # Add CORS headers
+        fmt_header += f"Access-Control-Allow-Origin: {origin}\r\n"
+        fmt_header += "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
+        fmt_header += "Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With\r\n"
+        fmt_header += "Access-Control-Allow-Credentials: true\r\n"
         fmt_header += "\r\n"
 
         return str(fmt_header).encode('utf-8') + self._content
@@ -403,13 +413,16 @@ class Response():
         reqhdr = request.headers
         rsphdr = self.headers
     
+        # Get origin from request header for CORS
+        origin = reqhdr.get("origin", "*")
+        
         #Build dynamic headers
         headers = {
                 "Accept": str(reqhdr.get("Accept", "application/json")),
                 "Accept-Language": str(reqhdr.get("Accept-Language", "en-US,en;q=0.9")),
                 "Authorization": str(reqhdr.get("Authorization", "Basic <credentials>")),
                 "Cache-Control": "no-cache",
-                "Content-Type": str(self.headers['Content-Type']),
+                "Content-Type": str(self.headers.get('Content-Type', 'text/html')),
                 "Content-Length": str(len(self._content) if isinstance(self._content, (bytearray,bytes)) else 0 ),
 #                "Cookie": "{}".format(reqhdr.get("Cookie", "sessionid=xyz789")), #dummy cooki
                 "Date": str(datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")),
@@ -418,6 +431,11 @@ class Response():
                 "Proxy-Authorization": "Basic dXNlcjpwYXNz",  # example base64
                 "Warning": "199 Miscellaneous warning",
                 "User-Agent": str(reqhdr.get("User-Agent", "Chrome/123.0.0.0")),
+                # CORS headers
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+                "Access-Control-Allow-Credentials": "true",
             }
         if 'Set-Cookie' in rsphdr: 
             headers['Set-Cookie'] = rsphdr['Set-Cookie']
@@ -510,7 +528,7 @@ class Response():
         method = request.method
         mime_type = 'application/octet-stream'
         print(f"[Response] {request.method} path {request.path}")
-        
+
         # Check if there's a route handler result (JSON API response)
         if hasattr(request, 'route_result') and request.route_result is not None:
             print(f"[Response] Route handler returned result: {request.route_result}")
@@ -525,7 +543,7 @@ class Response():
         if method == 'GET' and path in ['/', '/index.html']: 
             if not self.is_authenticated(request): 
                 print("[Response] Access denied: No valid authentication cookie")
-                return self.build_unauthorized_response()
+                return self.build_unauthorized_response(request)
             else: 
                 print("[Response] Access permitted: Valid authentication cookie found")
                         
@@ -552,10 +570,3 @@ class Response():
         self.reason = HTTP_REASON.get(self.status_code, "Unknown")
 
         return self._header + self._content
-"""
-request.path = "/index.html"
-request.headers = {"User-Agent": "Mozilla/5.0"}
-resp = Response(request)
-data = resp.build_response(request)
-print(data.decode('utf-8', errors='ignore'))
-"""

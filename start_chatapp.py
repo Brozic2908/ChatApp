@@ -32,7 +32,7 @@ app = WeApRous()
 peers_registry = {} # {peer_id: {"ip": ip, "port": port, "last_seen": timestamp}}
 channels = {} # {channel_name: {"members": [peer_ids], "messages": []}}
 peer_connections = {} # {peer_id: {"channels": [channel_names]}}
-
+direct_messages = {} # {(peer1, peer2): [messages]} - luôn sắp xếp peer_id để consistency
 
 @app.route('/login', methods=['POST'])
 def chat_login(headers="guest", body="anonymous"):
@@ -285,8 +285,24 @@ def send_direct_message(headers="", body=""):
             return {"status": "error", "message": "Target peer not found"}
         
         target_info = peers_registry[to_peer]
+        # Tạo key cho direct messages (sắp xếp để đảm bảo consistency)
+        dm_key = tuple(sorted([from_peer, to_peer]))
+        
+        # Khởi tạo nếu chưa tồn tại
+        if dm_key not in direct_messages:
+            direct_messages[dm_key] = []
+        
+        # Lưu message
+        message_obj = {
+            "from": from_peer,
+            "to": to_peer,
+            "message": message,
+            "timestamp": datetime.now().isoformat()
+        }
+        direct_messages[dm_key].append(message_obj)
 
         print(f"[ChatApp] Direct message {from_peer} -> {to_peer}: {message}")
+        print(f"[ChatApp] Stored in DM key: {dm_key}, total messages: {len(direct_messages[dm_key])}")
 
         return {
             "status": "success",
@@ -304,6 +320,53 @@ def send_direct_message(headers="", body=""):
         print(f"[ChatApp] Error in send-peer: {e}")
         return {"status": "error", "message": str(e)}
 
+@app.route('/get-direct-messages', methods=['GET', 'POST'])
+def get_direct_messages(headers="", body=""):
+    """
+    Retrieve direct messages between two peers.
+    
+    Expected body: {"peer1": "peer123", "peer2": "peer456"}
+    Hoặc chỉ cần {"from_peer": "peer123", "to_peer": "peer456"} (hoặc ngược lại)
+    
+    :param headers: Request headers
+    :param body: JSON containing peer IDs
+    """
+    try:
+        data = json.loads(body) if body else {}
+        peer1 = data.get('peer1') or data.get('from_peer') or data.get('to_peer')
+        peer2 = data.get('peer2') or data.get('to_peer') or data.get('from_peer')
+        
+        # Nếu chỉ có một peer, lấy peer còn lại từ current user
+        if not peer1 or not peer2:
+            return {"status": "error", "message": "Both peer IDs required"}
+        
+        # Tạo key (sắp xếp để đảm bảo consistency)
+        dm_key = tuple(sorted([peer1, peer2]))
+        
+        if dm_key not in direct_messages:
+            return {
+                "status": "success",
+                "peer1": peer1,
+                "peer2": peer2,
+                "messages": [],
+                "count": 0
+            }
+        
+        messages = direct_messages[dm_key]
+        
+        print(f"[ChatApp] Direct messages retrieved between {peer1} and {peer2}: {len(messages)}")
+        
+        return {
+            "status": "success",
+            "peer1": peer1,
+            "peer2": peer2,
+            "messages": messages,
+            "count": len(messages)
+        }
+        
+    except Exception as e:
+        print(f"[ChatApp] Error in get-direct-messages: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.route('/get-messages', methods=['GET', 'POST'])
 def get_channel_messages(headers="", body=""):

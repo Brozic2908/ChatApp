@@ -151,6 +151,29 @@ class HttpAdapter:
         
         req.prepare(msg_str, routes)
 
+        # Handle OPTIONS preflight request for CORS
+        if req.method == 'OPTIONS':
+            print("[HttpAdapter] Handling OPTIONS preflight request")
+            origin = req.headers.get("origin", "*")
+            allow_methods = req.headers.get("access-control-request-method", "GET, POST, PUT, DELETE, OPTIONS")
+            allow_headers = req.headers.get("access-control-request-headers", "Content-Type, Authorization, X-Requested-With")
+            
+            # Build OPTIONS response
+            status_line = "HTTP/1.1 200 OK\r\n"
+            headers = (
+                f"Access-Control-Allow-Origin: {origin}\r\n"
+                f"Access-Control-Allow-Methods: {allow_methods}\r\n"
+                f"Access-Control-Allow-Headers: {allow_headers}\r\n"
+                f"Access-Control-Allow-Credentials: true\r\n"
+                f"Access-Control-Max-Age: 86400\r\n"
+                f"Content-Length: 0\r\n"
+                f"\r\n"
+            )
+            preflight_response = (status_line + headers).encode('utf-8')
+            conn.sendall(preflight_response)
+            conn.close()
+            return
+
         # Handle request hook (route handler)
         route_result = None
         if req.hook:

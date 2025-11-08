@@ -1,21 +1,1312 @@
-<!doctype html>
-<html>
-<head>
-    <title>bksysnet@hcmut welcome</title>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Chat Application</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    <meta charset="utf-8" />
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="css/styles.css" />
-</head>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
 
-<body>
-<div>
-    <h1>bksysnet@hcmut  Domain</h1>
-    <p>This domain is for use in illustrative examples in documents.
-    </p>
-  
-       <img src="images/welcome.png" alt="bksysnet at HCMUT" width="500" height="600">  
-</div>
-</body>
+      .chat-container {
+        width: 90%;
+        max-width: 1200px;
+        height: 90vh;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* Login Screen */
+      .login-screen {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 40px;
+      }
+
+      .login-screen h1 {
+        color: #667eea;
+        margin-bottom: 30px;
+        font-size: 32px;
+      }
+
+      .login-form {
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .login-form input {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+
+      .login-form input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .login-form button {
+        width: 100%;
+        padding: 15px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .login-form button:hover {
+        background: #5568d3;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 280px;
+        background: #2c3e50;
+        color: white;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sidebar-header {
+        padding: 20px;
+        background: #1a252f;
+        border-bottom: 1px solid #34495e;
+      }
+
+      .sidebar-header h2 {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      .user-info {
+        font-size: 12px;
+        color: #95a5a6;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .online-indicator {
+        width: 8px;
+        height: 8px;
+        background: #2ecc71;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .sidebar-tabs {
+        display: flex;
+        border-bottom: 1px solid #34495e;
+      }
+
+      .sidebar-tab {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        color: #95a5a6;
+        font-weight: bold;
+        transition: all 0.3s;
+      }
+
+      .sidebar-tab:hover {
+        background: #34495e;
+      }
+
+      .sidebar-tab.active {
+        background: #34495e;
+        color: white;
+        border-bottom: 3px solid #667eea;
+      }
+
+      .tab-content {
+        display: none;
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .tab-content.active {
+        display: flex;
+      }
+
+      .channels-list,
+      .peers-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .channel-item,
+      .peer-item {
+        padding: 12px 15px;
+        margin-bottom: 5px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .channel-item:hover,
+      .peer-item:hover {
+        background: #34495e;
+      }
+
+      .channel-item.active,
+      .peer-item.active {
+        background: #667eea;
+      }
+
+      .channel-name,
+      .peer-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .peer-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .channel-badge,
+      .peer-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: bold;
+      }
+
+      .add-channel-btn {
+        margin: 10px;
+        padding: 12px;
+        background: #667eea;
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .add-channel-btn:hover {
+        background: #5568d3;
+      }
+
+      /* Main Chat Area */
+      .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #ecf0f1;
+      }
+
+      .chat-header {
+        padding: 20px;
+        background: white;
+        border-bottom: 2px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .chat-header h3 {
+        color: #2c3e50;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .chat-type-badge {
+        font-size: 12px;
+        padding: 4px 10px;
+        background: #667eea;
+        color: white;
+        border-radius: 12px;
+        font-weight: normal;
+      }
+
+      .channel-members {
+        font-size: 14px;
+        color: #7f8c8d;
+      }
+
+      .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .message {
+        display: flex;
+        gap: 10px;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .message-content {
+        flex: 1;
+        background: white;
+        padding: 12px 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .message-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+      }
+
+      .message-sender {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      .message-time {
+        font-size: 12px;
+        color: #95a5a6;
+      }
+
+      .message-text {
+        color: #34495e;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+
+      .message.own .message-content {
+        background: #667eea;
+        color: white;
+      }
+
+      .message.own .message-sender,
+      .message.own .message-text {
+        color: white;
+      }
+
+      .message.own .message-time {
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Input Area */
+      .chat-input {
+        padding: 20px;
+        background: white;
+        border-top: 2px solid #e0e0e0;
+      }
+
+      .input-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      .input-wrapper textarea {
+        flex: 1;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        font-size: 15px;
+        font-family: inherit;
+        resize: none;
+        max-height: 120px;
+      }
+
+      .input-wrapper textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .send-btn {
+        width: 50px;
+        height: 50px;
+        background: #667eea;
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: background 0.2s;
+      }
+
+      .send-btn:hover {
+        background: #5568d3;
+      }
+
+      .send-btn:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+      }
+
+      /* Notification */
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideInRight 0.3s ease;
+        z-index: 1000;
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .notification.success {
+        border-left: 4px solid #2ecc71;
+      }
+
+      .notification.error {
+        border-left: 4px solid #e74c3c;
+      }
+
+      .notification.info {
+        border-left: 4px solid #667eea;
+      }
+
+      .notification-icon {
+        font-size: 24px;
+      }
+
+      .notification-content {
+        flex: 1;
+      }
+
+      .notification-title {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+
+      .notification-text {
+        font-size: 14px;
+        color: #7f8c8d;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #bdc3c7;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #95a5a6;
+      }
+
+      /* Empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #95a5a6;
+      }
+
+      .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+      <h1 style="color: white">Hybrid Chat App</h1>
+      <div class="login-form">
+        <input
+          type="text"
+          id="loginPeerId"
+          placeholder="Enter your Peer ID (e.g., alice, bob)"
+        />
+        <input
+          type="text"
+          id="loginIp"
+          placeholder="Your IP Address"
+          value="127.0.0.1"
+        />
+        <input
+          type="number"
+          id="loginPort"
+          placeholder="Your Port"
+          value="5000"
+        />
+        <button onclick="handleLogin()">Join Chat</button>
+      </div>
+    </div>
+
+    <!-- Main Chat Container -->
+    <div class="chat-container hidden" id="chatContainer">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>Hybrid Chat</h2>
+          <div class="user-info">
+            <span class="online-indicator"></span>
+            <span id="currentUserDisplay">Guest</span>
+          </div>
+        </div>
+
+        <!-- Tabs for Channels and Direct Messages -->
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" onclick="switchTab('channels')">
+            📢 Channels
+          </button>
+          <button class="sidebar-tab" onclick="switchTab('peers')">
+            💬 Direct
+          </button>
+        </div>
+
+        <!-- Channels Tab -->
+        <div class="tab-content active" id="channelsTab">
+          <div class="channels-list" id="channelsList">
+            <!-- Channels will be added here dynamically -->
+          </div>
+          <button class="add-channel-btn" onclick="addNewChannel()">
+            + New Channel
+          </button>
+        </div>
+
+        <!-- Direct Messages Tab -->
+        <div class="tab-content" id="peersTab">
+          <div class="peers-list" id="peersList">
+            <!-- Peers will be added here dynamically -->
+          </div>
+          <button class="add-channel-btn" onclick="refreshPeers()">
+            🔄 Refresh Peers
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Chat -->
+      <div class="chat-main">
+        <div class="chat-header">
+          <div>
+            <h3 id="currentChannelName">Select a channel or peer</h3>
+            <div class="channel-members" id="channelMembers"></div>
+          </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <p>Select a channel or peer to start chatting</p>
+          </div>
+        </div>
+
+        <div class="chat-input">
+          <div class="input-wrapper">
+            <textarea
+              id="messageInput"
+              placeholder="Type your message..."
+              rows="1"
+              onkeypress="handleKeyPress(event)"
+              disabled
+            ></textarea>
+            <button
+              class="send-btn"
+              id="sendBtn"
+              onclick="sendMessage()"
+              disabled
+            >
+              ➤
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const BASE_URL = "http://localhost:8001";
+
+      let currentUser = null;
+      let currentChannel = null;
+      let currentPeer = null; // For direct messages
+      let chatMode = "channel"; // 'channel' or 'direct'
+      let channels = ["general", "random", "tech"];
+      let activePeers = [];
+      let unreadMessages = {};
+      let unreadDMs = {}; // Unread direct messages
+      let lastMessageCount = {};
+      let lastDMCount = {};
+
+      // Auto-grow textarea
+      document.addEventListener("DOMContentLoaded", () => {
+        const textarea = document.getElementById("messageInput");
+        if (textarea) {
+          textarea.addEventListener("input", function () {
+            this.style.height = "auto";
+            this.style.height = this.scrollHeight + "px";
+
+            const sendBtn = document.getElementById("sendBtn");
+            sendBtn.disabled = !this.value.trim();
+          });
+        }
+      });
+
+      // Switch between tabs
+      function switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll(".sidebar-tab").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        event.target.classList.add("active");
+
+        // Update tab content
+        document.querySelectorAll(".tab-content").forEach((content) => {
+          content.classList.remove("active");
+        });
+
+        if (tabName === "channels") {
+          document.getElementById("channelsTab").classList.add("active");
+        } else {
+          document.getElementById("peersTab").classList.add("active");
+          refreshPeers();
+        }
+      }
+
+      // Notification System
+      function showNotification(title, text, type = "info") {
+        const notification = document.createElement("div");
+        notification.className = `notification ${type}`;
+
+        const icons = {
+          success: "✓",
+          error: "✗",
+          info: "💬",
+        };
+
+        notification.innerHTML = `
+                <div class="notification-icon">${icons[type]}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-text">${text}</div>
+                </div>
+            `;
+
+        document.body.appendChild(notification);
+
+        if (type === "info" && (currentChannel || currentPeer)) {
+          playNotificationSound();
+        }
+
+        setTimeout(() => {
+          notification.remove();
+        }, 4000);
+      }
+
+      function playNotificationSound() {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = "sine";
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + 0.1
+        );
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      }
+
+      // Login
+      async function handleLogin() {
+        const peerId = document.getElementById("loginPeerId").value.trim();
+        const ip = document.getElementById("loginIp").value.trim();
+        const port = document.getElementById("loginPort").value.trim();
+
+        if (!peerId || !ip || !port) {
+          alert("Please fill all fields!");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BASE_URL}/submit-info`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ peer_id: peerId, ip, port: parseInt(port) }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            currentUser = { peer_id: peerId, ip, port: parseInt(port) };
+
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("chatContainer").classList.remove("hidden");
+            document.getElementById("currentUserDisplay").textContent = peerId;
+
+            showNotification("Welcome!", `Logged in as ${peerId}`, "success");
+
+            renderChannels();
+            refreshPeers();
+
+            setTimeout(() => selectChannel("general"), 500);
+          } else {
+            alert("Login failed: " + result.message);
+          }
+        } catch (error) {
+          alert("Connection error: " + error.message);
+        }
+      }
+
+      // Render channels list
+      function renderChannels() {
+        const channelsList = document.getElementById("channelsList");
+        channelsList.innerHTML = "";
+
+        channels.forEach((channel) => {
+          const channelItem = document.createElement("div");
+          channelItem.className = "channel-item";
+          channelItem.onclick = () => selectChannel(channel);
+
+          const unread = unreadMessages[channel] || 0;
+
+          channelItem.innerHTML = `
+                    <div class="channel-name">
+                        <span>#</span>
+                        <span>${channel}</span>
+                    </div>
+                    ${
+                      unread > 0
+                        ? `<span class="channel-badge">${unread}</span>`
+                        : ""
+                    }
+                `;
+
+          channelsList.appendChild(channelItem);
+        });
+      }
+
+      // Refresh peers list
+      async function refreshPeers() {
+        if (!currentUser) return;
+
+        try {
+          const response = await fetch(`${BASE_URL}/get-list`);
+          const result = await response.json();
+
+          if (result.status === "success") {
+            activePeers = result.peers.filter(
+              (p) => p.peer_id !== currentUser.peer_id
+            );
+            renderPeers();
+          }
+        } catch (error) {
+          console.error("Error fetching peers:", error);
+        }
+      }
+
+      // Render peers list
+      function renderPeers() {
+        const peersList = document.getElementById("peersList");
+        peersList.innerHTML = "";
+
+        if (activePeers.length === 0) {
+          peersList.innerHTML = `
+                    <div class="empty-state" style="padding: 20px;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
+                        <p style="font-size: 14px;">No other peers online</p>
+                    </div>
+                `;
+          return;
+        }
+
+        activePeers.forEach((peer) => {
+          const peerItem = document.createElement("div");
+          peerItem.className = "peer-item";
+          peerItem.onclick = () => selectPeer(peer.peer_id);
+
+          const initial = peer.peer_id.charAt(0).toUpperCase();
+          const unread = unreadDMs[peer.peer_id] || 0;
+
+          peerItem.innerHTML = `
+                    <div class="peer-name">
+                        <div class="peer-avatar">${initial}</div>
+                        <span>${peer.peer_id}</span>
+                    </div>
+                    ${
+                      unread > 0
+                        ? `<span class="peer-badge">${unread}</span>`
+                        : ""
+                    }
+                `;
+
+          peersList.appendChild(peerItem);
+        });
+      }
+
+      // Select channel
+      async function selectChannel(channelName) {
+        if (!currentUser) return;
+
+        chatMode = "channel";
+        currentChannel = channelName;
+        currentPeer = null;
+
+        unreadMessages[channelName] = 0;
+
+        document.getElementById("currentChannelName").innerHTML = `
+                # ${channelName}
+                <span class="chat-type-badge">Channel</span>
+            `;
+
+        document.querySelectorAll(".channel-item").forEach((item) => {
+          item.classList.remove("active");
+          if (item.textContent.includes(channelName)) {
+            item.classList.add("active");
+          }
+        });
+
+        document.querySelectorAll(".peer-item").forEach((item) => {
+          item.classList.remove("active");
+        });
+
+        try {
+          await fetch(`${BASE_URL}/add-list`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              peer_id: currentUser.peer_id,
+              channel: channelName,
+            }),
+          });
+
+          loadMessages(channelName);
+
+          document.getElementById("messageInput").disabled = false;
+          document.getElementById(
+            "messageInput"
+          ).placeholder = `Message #${channelName}`;
+        } catch (error) {
+          console.error("Error joining channel:", error);
+        }
+      }
+
+      // Select peer for direct message
+      async function selectPeer(peerId) {
+        if (!currentUser) return;
+
+        chatMode = "direct";
+        currentPeer = peerId;
+        currentChannel = null;
+
+        unreadDMs[peerId] = 0;
+        renderPeers();
+
+        document.getElementById("currentChannelName").innerHTML = `
+    ${peerId}
+    <span class="chat-type-badge">Direct Message</span>
+  `;
+
+        document.querySelectorAll(".peer-item").forEach((item) => {
+          item.classList.remove("active");
+          if (item.textContent.includes(peerId)) {
+            item.classList.add("active");
+          }
+        });
+
+        document.querySelectorAll(".channel-item").forEach((item) => {
+          item.classList.remove("active");
+        });
+
+        // THAY ĐỔI: Load direct messages thay vì chỉ clear
+        await loadDirectMessages(peerId);
+
+        document.getElementById("channelMembers").textContent =
+          "Direct message";
+        document.getElementById("messageInput").disabled = false;
+        document.getElementById(
+          "messageInput"
+        ).placeholder = `Message @${peerId}`;
+      }
+
+      // Thêm function mới để load direct messages
+      async function loadDirectMessages(peerId) {
+        if (!currentUser) return;
+
+        try {
+          const response = await fetch(`${BASE_URL}/get-direct-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              peer1: currentUser.peer_id,
+              peer2: peerId,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const container = document.getElementById("messagesContainer");
+            container.innerHTML = "";
+
+            if (result.messages.length === 0) {
+              container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <p>Start a private conversation with ${peerId}</p>
+          </div>
+        `;
+            } else {
+              result.messages.forEach((msg) => {
+                addMessageToUI(msg.from, msg.message, msg.timestamp);
+              });
+
+              container.scrollTop = container.scrollHeight;
+            }
+
+            document.getElementById("channelMembers").textContent = `${
+              result.count
+            } message${result.count !== 1 ? "s" : ""}`;
+          }
+        } catch (error) {
+          console.error("Error loading direct messages:", error);
+        }
+      }
+
+      // Load messages
+      async function loadMessages(channelName) {
+        try {
+          const response = await fetch(`${BASE_URL}/get-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ channel: channelName }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const container = document.getElementById("messagesContainer");
+            container.innerHTML = "";
+
+            if (result.messages.length === 0) {
+              container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💬</div>
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        `;
+            } else {
+              result.messages.forEach((msg) => {
+                addMessageToUI(msg.from, msg.message, msg.timestamp);
+              });
+
+              container.scrollTop = container.scrollHeight;
+            }
+
+            document.getElementById("channelMembers").textContent = `${
+              result.count
+            } message${result.count !== 1 ? "s" : ""}`;
+          }
+        } catch (error) {
+          console.error("Error loading messages:", error);
+        }
+      }
+
+      // Add message to UI
+      function addMessageToUI(sender, text, timestamp) {
+        const container = document.getElementById("messagesContainer");
+
+        const emptyState = container.querySelector(".empty-state");
+        if (emptyState) emptyState.remove();
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message";
+
+        if (sender === currentUser.peer_id) {
+          messageDiv.classList.add("own");
+        }
+
+        const initial = sender.charAt(0).toUpperCase();
+        const time = new Date(timestamp).toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        messageDiv.innerHTML = `
+                <div class="message-avatar">${initial}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-sender">${sender}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(text)}</div>
+                </div>
+            `;
+
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // Send message
+      async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
+
+        if (!message || !currentUser) return;
+        if (!currentChannel && !currentPeer) return;
+
+        try {
+          if (chatMode === "channel" && currentChannel) {
+            // Send to channel (broadcast)
+            const response = await fetch(`${BASE_URL}/broadcast-peer`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                peer_id: currentUser.peer_id,
+                channel: currentChannel,
+                message: message,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+              addMessageToUI(
+                currentUser.peer_id,
+                message,
+                new Date().toISOString()
+              );
+              showNotification(
+                "Message sent",
+                `Broadcasted to ${result.recipients.length} peer(s)`,
+                "success"
+              );
+            }
+          } else if (chatMode === "direct" && currentPeer) {
+            // Send direct message
+            const response = await fetch(`${BASE_URL}/send-peer`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                from_peer: currentUser.peer_id,
+                to_peer: currentPeer,
+                message: message,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+              addMessageToUI(
+                currentUser.peer_id,
+                message,
+                new Date().toISOString()
+              );
+              showNotification(
+                "Direct message sent",
+                `Sent to ${currentPeer}`,
+                "success"
+              );
+            }
+          }
+
+          input.value = "";
+          input.style.height = "auto";
+          document.getElementById("sendBtn").disabled = true;
+        } catch (error) {
+          showNotification("Error", "Failed to send message", "error");
+          console.error("Error sending message:", error);
+        }
+      }
+
+      // Handle Enter key
+      function handleKeyPress(event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      }
+
+      // Add new channel
+      function addNewChannel() {
+        const channelName = prompt("Enter new channel name:");
+        if (channelName && !channels.includes(channelName)) {
+          channels.push(channelName);
+          renderChannels();
+          showNotification(
+            "Channel created",
+            `#${channelName} is now available`,
+            "success"
+          );
+        }
+      }
+
+      // Escape HTML
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Auto-refresh messages (polling)
+      setInterval(() => {
+        if (currentChannel && chatMode === "channel") {
+          checkNewMessages();
+        } else if (currentPeer && chatMode === "direct") {
+          checkNewDirectMessages();
+        }
+      }, 3000);
+
+      // Thêm function để check new direct messages
+      async function checkNewDirectMessages() {
+        if (!currentUser || !currentPeer) return;
+
+        try {
+          const response = await fetch(`${BASE_URL}/get-direct-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              peer1: currentUser.peer_id,
+              peer2: currentPeer,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const newCount = result.count;
+            const oldCount = lastDMCount[currentPeer] || 0;
+
+            if (newCount > oldCount) {
+              // Reload messages để hiển thị tin nhắn mới
+              await loadDirectMessages(currentPeer);
+
+              if (oldCount > 0) {
+                showNotification(
+                  "New Message",
+                  `New message from ${currentPeer}`,
+                  "info"
+                );
+              }
+            }
+
+            lastDMCount[currentPeer] = newCount;
+          }
+        } catch (error) {
+          console.error("Error checking direct messages:", error);
+        }
+      }
+
+      // Thêm polling để check unread direct messages từ các peer khác
+      setInterval(() => {
+        if (!currentUser) return;
+
+        activePeers.forEach((peer) => {
+          if (peer.peer_id !== currentPeer || chatMode !== "direct") {
+            checkUnreadDirectMessages(peer.peer_id);
+          }
+        });
+      }, 5000);
+
+      async function checkUnreadDirectMessages(peerId) {
+        if (!currentUser) return;
+
+        try {
+          const response = await fetch(`${BASE_URL}/get-direct-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              peer1: currentUser.peer_id,
+              peer2: peerId,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const newCount = result.count;
+            const oldCount = lastDMCount[peerId] || 0;
+
+            if (newCount > oldCount) {
+              unreadDMs[peerId] =
+                (unreadDMs[peerId] || 0) + (newCount - oldCount);
+              renderPeers();
+            }
+
+            lastDMCount[peerId] = newCount;
+          }
+        } catch (error) {
+          console.error("Error checking unread DMs:", error);
+        }
+      }
+
+      async function checkNewMessages() {
+        try {
+          const response = await fetch(`${BASE_URL}/get-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ channel: currentChannel }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const newCount = result.count;
+            const oldCount = lastMessageCount[currentChannel] || 0;
+
+            if (newCount > oldCount) {
+              const diff = newCount - oldCount;
+              loadMessages(currentChannel);
+
+              if (oldCount > 0) {
+                showNotification(
+                  "New Message",
+                  `${diff} new message(s) in #${currentChannel}`,
+                  "info"
+                );
+              }
+            }
+
+            lastMessageCount[currentChannel] = newCount;
+          }
+        } catch (error) {
+          console.error("Error checking messages:", error);
+        }
+      }
+
+      // Check unread messages in other channels
+      setInterval(() => {
+        channels.forEach((channel) => {
+          if (channel !== currentChannel || chatMode !== "channel") {
+            checkUnreadMessages(channel);
+          }
+        });
+      }, 5000);
+
+      async function checkUnreadMessages(channel) {
+        try {
+          const response = await fetch(`${BASE_URL}/get-messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ channel }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            const newCount = result.count;
+            const oldCount = lastMessageCount[channel] || 0;
+
+            if (newCount > oldCount) {
+              unreadMessages[channel] =
+                (unreadMessages[channel] || 0) + (newCount - oldCount);
+              renderChannels();
+            }
+
+            lastMessageCount[channel] = newCount;
+          }
+        } catch (error) {
+          console.error("Error checking unread:", error);
+        }
+      }
+
+      // Auto-refresh peer list
+      setInterval(() => {
+        refreshPeers();
+      }, 10000);
+    </script>
+  </body>
 </html>
