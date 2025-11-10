@@ -1,8 +1,102 @@
-<html><body>
-<h1>Login</h1>
-<form method="POST" action="/login">
-  Username: <input name="username" type="text"><br>
-  Password: <input name="password" type="password"><br>
-  <input type="submit" value="Login">
-</form>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #74abe2, #5563de);
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .login-container {
+        background: white;
+        padding: 40px 50px;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        width: 320px;
+        text-align: center;
+      }
+
+      h1 {
+        margin-bottom: 25px;
+        color: #333;
+        font-size: 28px;
+        letter-spacing: 1px;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0 20px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+        outline: none;
+        transition: 0.3s;
+      }
+
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        border-color: #5563de;
+        box-shadow: 0 0 5px rgba(85, 99, 222, 0.4);
+      }
+
+      input[type="submit"] {
+        background-color: #5563de;
+        color: white;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      input[type="submit"]:hover {
+        background-color: #3e4fb5;
+      }
+
+      .footer {
+        margin-top: 15px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .footer a {
+        color: #5563de;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h1>Login</h1>
+      <form method="POST" action="/login">
+        <input name="username" type="text" placeholder="Username" required />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          required
+        />
+        <input type="submit" value="Login" />
+      </form>
+      <div class="footer">
+        <p>Don’t have an account? <a href="/register">Register</a></p>
+      </div>
+    </div>
+  </body>
+</html>
